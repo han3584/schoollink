@@ -1,5 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>동창회 - 본인 인증 및 입장</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 340px; text-align: center; }
+        h1 { color: #4a90e2; font-size: 24px; margin-bottom: 10px; }
+        p { color: #666; font-size: 14px; margin-bottom: 20px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: #4a90e2; }
+        button { width: 100%; padding: 14px; background-color: #4a90e2; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 5px; }
+        button:active { background-color: #357abd; }
+        .hidden { display: none; }
+        #recaptcha-container { margin-top: 10px; }
+        .status-msg { font-size: 12px; color: #e74c3c; margin-top: 10px; min-height: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏫 우리들의 동창회</h1>
+    
+    <div id="step1">
+        <p>안전한 커뮤니티를 위해<br><b>휴대폰 인증</b>이 필요합니다. ✨</p>
+        <input type="tel" id="phoneNumber" placeholder="휴대폰 번호 (01012345678)">
+        <div id="recaptcha-container"></div>
+        <button id="sendBtn" onclick="handleSendCode()">인증문자 받기 📩</button>
+    </div>
+
+    <div id="step2" class="hidden">
+        <p>문자로 받은 <b>6자리 번호</b>를<br>입력해주세요. 💬</p>
+        <input type="number" id="verificationCode" placeholder="인증번호 6자리">
+        <button onclick="handleVerifyCode()">인증 완료 ✅</button>
+    </div>
+
+    <div id="step3" class="hidden">
+        <p>인증 성공! 🎉<br>동창을 찾기 위한 정보를 입력하세요.</p>
+        <form id="entryForm">
+            <input type="text" id="schoolName" placeholder="출신 학교 (예: 한국고)" required>
+            <input type="number" id="entryYear" placeholder="입학 년도 (예: 2010)" required>
+            <input type="text" id="nickname" placeholder="사용할 닉네임" required>
+            <button type="submit">동창방 입장하기 🏃‍♂️</button>
+        </form>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+
 <script>
-    // 1. Firebase 설정 (마마님이 올려주신 값 그대로 사용합니다)
+    // 1. Firebase 설정 (마마님 프로젝트 정보 적용)
     const firebaseConfig = {
         apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
         authDomain: "test-1966e.firebaseapp.com",
@@ -7,61 +61,77 @@
         projectId: "test-1966e",
         storageBucket: "test-1966e.firebasestorage.app",
         messagingSenderId: "1067794324006",
-        appId: "1:1067794324006:web:a98367fccd9db10623a4e7",
-        measurementId: "G-CJ0WZCQMJE"
+        appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
     };
 
-    // 2. Firebase 초기화 (호환 방식)
+    // Firebase 초기화
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); // 이 부분이 누락되어 auth를 찾지 못했던 거예요!
+    const auth = firebase.auth();
 
-    // 3. reCAPTCHA 초기화
+    // 2. reCAPTCHA 설정 (보이지 않는 방식)
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
         'size': 'invisible'
     });
 
     let confirmationResult;
 
-    // 4. 인증문자 발송
-    async function sendCode() {
-        const num = document.getElementById('phoneNumber').value;
-        if(!num) return alert("번호를 입력해주세요!");
+    // 3. 인증문자 발송 함수
+    async function handleSendCode() {
+        const num = document.getElementById('phoneNumber').value.trim();
+        const status = document.getElementById('statusMsg');
         
-        // 국가번호 처리 (+8210...)
-        const formatNum = "+82" + num.substring(1); 
+        if(!num || num.length < 10) {
+            status.innerText = "올바른 번호를 입력해주세요. 📱";
+            return;
+        }
+
+        // 한국 국가번호(+82) 적용 (01012345678 -> +821012345678)
+        const formatNum = "+82" + num.replace(/^0/, "");
         
         try {
-            // 이제 auth 객체를 정상적으로 사용합니다
+            status.style.color = "#3498db";
+            status.innerText = "문자 발송 시도 중... ⏳";
+            
             confirmationResult = await auth.signInWithPhoneNumber(formatNum, window.recaptchaVerifier);
+            
             document.getElementById('step1').classList.add('hidden');
             document.getElementById('step2').classList.remove('hidden');
+            status.innerText = "";
             alert("문자가 발송되었습니다! 📩");
         } catch (err) {
             console.error(err);
-            alert("발송 실패: " + err.message);
+            status.style.color = "#e74c3c";
+            status.innerText = "발송 실패: " + err.message;
         }
     }
 
-    // 5. 인증번호 확인
-    async function verifyCode() {
+    // 4. 인증번호 확인 함수
+    async function handleVerifyCode() {
         const code = document.getElementById('verificationCode').value;
+        const status = document.getElementById('statusMsg');
+
         try {
             await confirmationResult.confirm(code);
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('step3').classList.remove('hidden');
-            alert("본인 인증이 완료되었습니다! 🎉");
+            status.innerText = "";
+            alert("본인 인증 성공! 🎉");
         } catch (err) {
-            alert("인증번호가 틀렸습니다.");
+            status.innerText = "인증번호가 틀렸습니다. 다시 확인해주세요. ❌";
         }
     }
 
-    // 6. 최종 입장
+    // 5. 최종 입장 (정보 전달)
     document.getElementById('entryForm').onsubmit = function(e) {
         e.preventDefault();
         const school = document.getElementById('schoolName').value;
         const year = document.getElementById('entryYear').value;
         const nick = document.getElementById('nickname').value;
         
+        // chat.html로 정보 전달
         location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}&auth=true`;
     };
 </script>
+
+</body>
+</html>
