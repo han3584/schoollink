@@ -2,43 +2,89 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>실시간 동창 대화방</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background-color: #e6ecf0; }
-        .header { background: #4a90e2; color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-        .chat-box { height: calc(100vh - 160px); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        
-        /* 메시지 스타일 */
-        .msg-container { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .msg-sender { font-size: 12px; color: #555; margin-bottom: 3px; margin-left: 5px; }
-        .msg-bubble { background: white; padding: 10px 15px; border-radius: 18px; max-width: 70%; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-break: break-all; }
-        
-        /* 내가 보낸 메시지 스타일 */
-        .me { align-self: flex-end; align-items: flex-end; }
-        .me .msg-bubble { background: #dcf8c6; }
-        .me .msg-sender { margin-right: 5px; }
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f5f7fb;
+            --my-msg-color: #fee500;
+        }
 
-        .input-area { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; display: flex; box-sizing: border-box; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        button { margin-left: 10px; padding: 10px 20px; background: #4a90e2; color: white; border: none; border-radius: 20px; cursor: pointer; }
+        body { 
+            font-family: -apple-system, sans-serif; 
+            margin: 0; 
+            background-color: var(--bg-color);
+            height: 100dvh; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header { background: white; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #ddd; }
+
+        .chat-box { 
+            flex: 1;
+            overflow-y: auto; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 메시지 컨테이너 구성 수정 */
+        .msg-container { margin-bottom: 12px; display: flex; flex-direction: column; max-width: 85%; }
+        .msg-sender { font-size: 11px; color: #777; margin-bottom: 4px; margin-left: 5px; }
+        
+        /* 말풍선과 시간을 가로로 배치하기 위한 래퍼 */
+        .msg-row { display: flex; align-items: flex-end; }
+        
+        .msg-bubble { 
+            background: white; 
+            padding: 10px 14px; 
+            border-radius: 15px; 
+            font-size: 15px; 
+            line-height: 1.4;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            word-break: break-all;
+        }
+
+        /* 시간 표시 스타일 */
+        .msg-time { 
+            font-size: 10px; 
+            color: #999; 
+            margin: 0 5px; 
+            white-space: nowrap; 
+        }
+        
+        /* 내가 보낸 메시지: 우측 정렬 및 시간 위치 변경 */
+        .me { align-self: flex-end; align-items: flex-end; }
+        .me .msg-row { flex-direction: row-reverse; } /* 시간-말풍선 순서 반전 */
+        .me .msg-bubble { background: var(--my-msg-color); border-bottom-right-radius: 2px; }
+        .me .msg-sender { display: none; }
+
+        .input-area { 
+            background: white; 
+            padding: 10px 15px env(safe-area-inset-bottom);
+            display: flex; 
+            border-top: 1px solid #eee;
+        }
+
+        input { flex: 1; padding: 12px 18px; border: 1px solid #ddd; border-radius: 25px; font-size: 16px; outline: none; }
+        button { margin-left: 10px; width: 60px; background: var(--primary-color); color: white; border: none; border-radius: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <span id="roomTitle">연결 중...</span>
-    </div>
-
+    <div class="header"><span id="roomTitle">연결 중...</span></div>
     <div id="chatBox" class="chat-box"></div>
-
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) sendMsg()">
+        <input type="text" id="msgInput" placeholder="메시지 입력..." onkeypress="if(event.keyCode==13) sendMsg()">
         <button onclick="sendMsg()">전송</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
-    <script>
         // ⚠️ 주의: 아래의 config 내용을 본인의 Firebase 설정값으로 반드시 교체하세요!
         const firebaseConfig = {
             apiKey: "1067794324006",
@@ -54,43 +100,50 @@
         const database = firebase.database();
 
         const params = new URLSearchParams(window.location.search);
-        const school = params.get('school');
-        const year = params.get('year');
-        const myNick = params.get('nick');
+        const school = params.get('school'), year = params.get('year'), myNick = params.get('nick');
         const roomId = btoa(encodeURIComponent(school + year));
 
-        document.getElementById('roomTitle').innerText = `🎓 ${school} ${year}학번 (${myNick}님)`;
+        document.getElementById('roomTitle').innerText = `${school} ${year}학번`;
 
-        // 메시지 전송
         function sendMsg() {
             const input = document.getElementById('msgInput');
             if(!input.value.trim()) return;
 
             database.ref('rooms/' + roomId).push({
                 text: input.value,
-                sender: myNick, // 입력받은 닉네임 저장
-                timestamp: Date.now()
+                sender: myNick,
+                timestamp: firebase.database.ServerValue.TIMESTAMP // 서버 시간 저장
             });
             input.value = '';
         }
 
-        // 메시지 수신 및 화면 표시
+        // 시간을 오전/오후 형식으로 변환하는 함수
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
         database.ref('rooms/' + roomId).on('child_added', (snapshot) => {
             const data = snapshot.val();
             const chatBox = document.getElementById('chatBox');
-            
-            const isMe = data.sender === myNick; // 내가 보낸 건지 확인
+            const isMe = data.sender === myNick;
             
             const container = document.createElement('div');
             container.className = `msg-container ${isMe ? 'me' : ''}`;
             
+            // 시간 포맷팅 적용
+            const timeStr = formatTime(data.timestamp);
+
             container.innerHTML = `
                 <div class="msg-sender">${data.sender}</div>
-                <div class="msg-bubble">${data.text}</div>
+                <div class="msg-row">
+                    <div class="msg-bubble">${data.text}</div>
+                    <div class="msg-time">${timeStr}</div>
+                </div>
             `;
             
             chatBox.appendChild(container);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
         });
     </script>
 </body>
