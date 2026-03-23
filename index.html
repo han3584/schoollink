@@ -2,39 +2,108 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>우리들의 추억 - 동창 찾기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동창회 - 본인 인증</title>
     <style>
-        body { font-family: 'Nanum Gothic', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h1 { color: #4a90e2; margin-bottom: 20px; }
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h1 { color: #4a90e2; font-size: 22px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
-        button:hover { background-color: #357abd; }
-        .info { font-size: 12px; color: #888; margin-top: 15px; }
+        button { width: 100%; padding: 12px; background-color: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .hidden { display: none; }
+        #recaptcha-container { margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🏫 동창회 입구</h1>
-        <p>친구들이 기다리고 있어요!</p>
-        <form id="entryForm">
-            <input type="text" id="schoolName" placeholder="출신 학교 (예: 한국고)" required>
-            <input type="number" id="entryYear" placeholder="입학 년도 (예: 2010)" required>
-            <input type="text" id="nickname" placeholder="사용할 닉네임" required>
-            <button type="submit">동창방 입장하기 🏃‍♂️</button>
-        </form>
+
+<div class="container">
+    <h1>🏫 동창회 본인인증</h1>
+    
+    <div id="step1">
+        <p>휴대폰 번호를 입력해주세요.</p>
+        <input type="tel" id="phoneNumber" placeholder="01012345678">
+        <div id="recaptcha-container"></div>
+        <button onclick="sendCode()">인증문자 받기 📩</button>
     </div>
 
-    <script>
-        document.getElementById('entryForm').onsubmit = function(e) {
-            e.preventDefault();
-            const school = document.getElementById('schoolName').value;
-            const year = document.getElementById('entryYear').value;
-            const nick = document.getElementById('nickname').value;
-            
-            // 닉네임까지 포함해서 URL 파라미터로 전송
-            location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}`;
-        };
-    </script>
+    <div id="step2" class="hidden">
+        <p>문자로 받은 6자리 번호를 입력하세요.</p>
+        <input type="number" id="verificationCode" placeholder="123456">
+        <button onclick="verifyCode()">인증 완료 ✅</button>
+    </div>
+
+    <div id="step3" class="hidden">
+        <p>인증 성공! 정보를 입력하세요.</p>
+        <form id="entryForm">
+            <input type="text" id="schoolName" placeholder="출신 학교" required>
+            <input type="number" id="entryYear" placeholder="입학 년도" required>
+            <input type="text" id="nickname" placeholder="실명 또는 닉네임" required>
+            <button type="submit">동창방 입장 🏃‍♂️</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+
+<script>
+    // 본인의 Config를 넣어주세요
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT",
+        appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // 1. reCAPTCHA 초기화 (구글 보안 로직)
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'invisible'
+    });
+
+    let confirmationResult;
+
+    // 2. 인증문자 발송
+    async function sendCode() {
+        const num = document.getElementById('phoneNumber').value;
+        // 한국 국가번호 +82 추가 및 앞자리 0 제외 (010 -> +8210)
+        const formatNum = "+82" + num.substring(1); 
+        
+        try {
+            confirmationResult = await auth.signInWithPhoneNumber(formatNum, window.recaptchaVerifier);
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            alert("문자가 발송되었습니다!");
+        } catch (err) {
+            alert("발송 실패: " + err.message);
+        }
+    }
+
+    // 3. 인증번호 확인
+    async function verifyCode() {
+        const code = document.getElementById('verificationCode').value;
+        try {
+            await confirmationResult.confirm(code);
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            alert("본인 인증이 완료되었습니다! 🎉");
+        } catch (err) {
+            alert("인증번호가 틀렸습니다.");
+        }
+    }
+
+    // 4. 최종 입장
+    document.getElementById('entryForm').onsubmit = function(e) {
+        e.preventDefault();
+        const school = document.getElementById('schoolName').value;
+        const year = document.getElementById('entryYear').value;
+        const nick = document.getElementById('nickname').value;
+        
+        // 인증된 사용자 정보를 포함해 페이지 이동
+        location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}&auth=true`;
+    };
+</script>
+
 </body>
 </html>
