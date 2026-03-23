@@ -45,13 +45,28 @@
         return false;
     };
 
-    // 2. Firebase 설정 (반드시 본인 것으로 교체!)
-    const firebaseConfig = {
-        apiKey: "1067794324006", // <--- 여기를 수정하셨나요?
-        databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
-        projectId: "test-1966e",
-        appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
-    };
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
+  authDomain: "test-1966e.firebaseapp.com",
+  databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
+  projectId: "test-1966e",
+  storageBucket: "test-1966e.firebasestorage.app",
+  messagingSenderId: "1067794324006",
+  appId: "1:1067794324006:web:a98367fccd9db10623a4e7",
+  measurementId: "G-CJ0WZCQMJE"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
     // 설정값이 그대로면 경고
     if(firebaseConfig.apiKey.includes("YOUR_")) {
