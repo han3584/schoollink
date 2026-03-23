@@ -48,15 +48,28 @@
 
 <script>
     // 본인의 Config를 넣어주세요
-    const firebaseConfig = {
-        apiKey: "1067794324006",
-        authDomain: "test-1966e.firebaseapp.com",
-        projectId: "test-1966e",
-        appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
+  authDomain: "test-1966e.firebaseapp.com",
+  databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
+  projectId: "test-1966e",
+  storageBucket: "test-1966e.firebasestorage.app",
+  messagingSenderId: "1067794324006",
+  appId: "1:1067794324006:web:a98367fccd9db10623a4e7",
+  measurementId: "G-CJ0WZCQMJE"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
     // 1. reCAPTCHA 초기화 (구글 보안 로직)
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
         'size': 'invisible'
