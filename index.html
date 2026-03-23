@@ -7,8 +7,8 @@
         body { font-family: 'Nanum Gothic', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; text-align: center; }
         h1 { color: #4a90e2; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
         button:hover { background-color: #357abd; }
         .info { font-size: 12px; color: #888; margin-top: 15px; }
     </style>
@@ -16,23 +16,24 @@
 <body>
     <div class="container">
         <h1>🏫 동창회 입구</h1>
-        <p>추억 속의 친구들을 만나보세요!</p>
-        <form id="findForm">
-            <input type="text" id="schoolName" placeholder="출신 학교 입력 (예: 한국고등학교)" required>
+        <p>친구들이 기다리고 있어요!</p>
+        <form id="entryForm">
+            <input type="text" id="schoolName" placeholder="출신 학교 (예: 한국고)" required>
             <input type="number" id="entryYear" placeholder="입학 년도 (예: 2010)" required>
-            <button type="submit">친구 찾기 & 입장하기 🏃‍♂️</button>
+            <input type="text" id="nickname" placeholder="사용할 닉네임" required>
+            <button type="submit">동창방 입장하기 🏃‍♂️</button>
         </form>
-        <p class="info">동일한 학교/년도를 입력한 분들과 매칭됩니다.</p>
     </div>
 
     <script>
-        document.getElementById('findForm').onsubmit = function(e) {
+        document.getElementById('entryForm').onsubmit = function(e) {
             e.preventDefault();
             const school = document.getElementById('schoolName').value;
             const year = document.getElementById('entryYear').value;
+            const nick = document.getElementById('nickname').value;
             
-            // 데이터를 URL 파라미터로 넘기며 대화방 페이지로 이동
-            location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}`;
+            // 닉네임까지 포함해서 URL 파라미터로 전송
+            location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}`;
         };
     </script>
 </body>
