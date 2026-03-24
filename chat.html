@@ -85,14 +85,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
 
 <script>
-const firebaseConfig = {
-    apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
-    databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
-    projectId: "test-1966e",
-    // ⚠️ 이 부분을 반드시 아래 이름으로 수정해 주세요!
-    storageBucket: "test-1966e.firebasestorage.app", 
-    appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
-};
+    // ✅ 마마님의 실제 Firebase 설정 (버킷 주소 및 API Key 최종 반영)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
+        databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
+        projectId: "test-1966e",
+        storageBucket: "test-1966e.firebasestorage.app",
+        appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
@@ -105,30 +105,42 @@ const firebaseConfig = {
     const roomId = encodeURIComponent(school + year).replace(/%/g, "");
 
     let myRealName = sessionStorage.getItem('realName') || "익명";
-    let myProfileUrl = sessionStorage.getItem('profileUrl') || "";
+    let myProfileUrl = sessionStorage.getItem('profileUrl') || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
     document.getElementById('roomTitle').innerText = `🤝 ${school} ${year}학번`;
 
     const chatRef = database.ref('rooms/' + roomId);
     const presenceRef = database.ref('rooms/' + roomId + '/presence');
 
-    // 실시간 접속자 및 입장 알림
-    presenceRef.push(myNick).onDisconnect().remove();
-    presenceRef.on('value', snap => {
-        document.getElementById('userCount').innerText = `현재 ${snap.numChildren()}명 접속 중 🔥 (프로필 수정 클릭)`;
-    });
-    chatRef.push({ type: 'system', text: `${myRealName}(${myNick})님이 입장하셨습니다. ✨` });
-    chatRef.onDisconnect().push({ type: 'system', text: `${myRealName}님이 학교를 떠났습니다. 👋` });
+    // --- 접속자 관리 및 입퇴장 알림 ---
+    const myPresence = presenceRef.push(myNick);
+    myPresence.onDisconnect().remove();
 
-    // --- 프로필 수정 관련 로직 ---
+    presenceRef.on('value', snap => {
+        const count = snap.numChildren();
+        document.getElementById('userCount').innerText = `현재 ${count}명 접속 중 🔥 (프로필 수정 클릭)`;
+    });
+
+    // 입장 알림
+    chatRef.push({ 
+        type: 'system', 
+        text: `✨ ${myRealName}(${myNick})님이 입장하셨습니다.` 
+    });
+
+    // 퇴장 알림 (수정된 로직 ✅)
+    const leaveRef = chatRef.push();
+    leaveRef.onDisconnect().set({ 
+        type: 'system', 
+        text: `👋 ${myRealName}님이 학교를 떠났습니다.` 
+    });
+
+    // --- 프로필 수정 관련 ---
     function openEditModal() {
         document.getElementById('editPreview').src = myProfileUrl;
         document.getElementById('editRealName').value = myRealName;
         document.getElementById('editModal').style.display = 'flex';
     }
-
     function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-
     function previewEdit(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -136,7 +148,6 @@ const firebaseConfig = {
             reader.readAsDataURL(input.files[0]);
         }
     }
-
     async function saveProfile() {
         const newName = document.getElementById('editRealName').value.trim();
         const newFile = document.getElementById('editFile').files[0];
@@ -157,18 +168,12 @@ const firebaseConfig = {
             sessionStorage.setItem('profileUrl', myProfileUrl);
         }
 
-        // 이름이 바뀌었을 경우에만 시스템 메시지 전송
         if(oldName !== newName) {
-            chatRef.push({ 
-                type: 'system', 
-                text: `📢 ${oldName}님이 ${newName}으로 이름을 변경했습니다.` 
-            });
+            chatRef.push({ type: 'system', text: `📢 ${oldName}님이 ${newName}으로 이름을 변경했습니다.` });
         }
-
         saveBtn.innerText = "저장";
         saveBtn.disabled = false;
         closeEditModal();
-        alert("프로필이 성공적으로 변경되었습니다! 😎");
     }
 
     // --- 메시지 전송 및 수신 ---
@@ -218,6 +223,14 @@ const firebaseConfig = {
     });
 
     document.getElementById('msgInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
+
+    // 모바일 키보드 대응 레이아웃 조절
+    function resizer() {
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        document.getElementById('app').style.height = vh + "px";
+    }
+    window.visualViewport?.addEventListener('resize', resizer);
+    window.addEventListener('load', resizer);
 </script>
 
 </body>
