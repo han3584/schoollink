@@ -6,7 +6,7 @@
     <title>학연지연 - 실시간 톡</title>
     <style>
         :root { --bg-color: #abc1d1; --primary-color: #4a90e2; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100dvh; background-color: var(--bg-color); font-family: sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100dvh; background-color: var(--bg-color); font-family: -apple-system, sans-serif; overflow: hidden; }
         #app { display: flex; flex-direction: column; height: 100%; width: 100%; }
         
         /* 헤더 스타일 */
@@ -22,7 +22,8 @@
         .msg-content-wrapper { display: flex; flex-direction: column; max-width: 75%; }
         .msg-sender { font-size: 11px; color: #444; margin-bottom: 3px; }
         .msg-bubble { background: white; padding: 10px 14px; border-radius: 12px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-break: break-all; }
-        .system-msg { align-self: center; background: rgba(0,0,0,0.15); color: white; padding: 5px 15px; border-radius: 20px; font-size: 11px; margin: 10px 0; }
+        .system-msg { align-self: center; background: rgba(0,0,0,0.15); color: white; padding: 5px 15px; border-radius: 20px; font-size: 11px; margin: 10px 0; text-align: center; }
+        
         .me { flex-direction: row-reverse; }
         .me .msg-content-wrapper { align-items: flex-end; }
         .me .profile-circle { display: none; }
@@ -42,7 +43,7 @@
 
         /* 하단 입력창 */
         .input-area { background: white; padding: 10px; display: flex; gap: 8px; align-items: center; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-        input[type="text"] { flex: 1; height: 40px; border-radius: 20px; border: 1px solid #ddd; padding: 0 15px; font-size: 16px; outline: none; }
+        input[type="text"] { flex: 1; height: 40px; border-radius: 20px; border: 1px solid #ddd; padding: 0 15px; font-size: 16px; outline: none; background: #fcfcfc; }
         .btn-icon { background: #eee; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .btn-send { width: 55px; height: 40px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; }
     </style>
@@ -85,7 +86,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
 
 <script>
-    // ✅ 마마님의 실제 Firebase 설정 (버킷 주소 및 API Key 최종 반영)
+    // ✅ 제공해주신 Firebase 최종 설정값
     const firebaseConfig = {
         apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
         databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
@@ -102,64 +103,78 @@
     const school = params.get('school') || "학연지연";
     const year = params.get('year') || "동창";
     const myNick = params.get('nick') || "익명";
-    const roomId = encodeURIComponent(school + year).replace(/%/g, "");
-
+    
     let myRealName = sessionStorage.getItem('realName') || "익명";
     let myProfileUrl = sessionStorage.getItem('profileUrl') || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    const roomId = encodeURIComponent(school + year).replace(/%/g, "");
 
     document.getElementById('roomTitle').innerText = `🤝 ${school} ${year}학번`;
 
     const chatRef = database.ref('rooms/' + roomId);
     const presenceRef = database.ref('rooms/' + roomId + '/presence');
-// --- [핵심 수정: 데이터 수신 및 undefined 방어] ---
-chatRef.on('child_added', (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
 
-    const chatBox = document.getElementById('chatBox');
-    
-    // ✨ 모든 값이 없을 경우를 대비해 '기본값'을 강제로 지정합니다.
-    const displayName = data.realName || data.sender || "알 수 없는 친구";
-    const displayMsg = data.text || "내용이 없는 메시지입니다.";
-    const displayProfile = data.profile || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    // 1. 중복 리스너 방지 및 수신 로직 (undefined 방어 포함)
+    chatRef.off('child_added'); 
+    chatRef.on('child_added', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
 
-    if (data.type === 'system') {
-        const div = document.createElement('div');
-        div.className = 'system-msg';
-        div.innerText = data.text || "알림";
-        chatBox.appendChild(div);
-    } else {
-        const isMe = data.sender === myNick;
-        const wrapper = document.createElement('div');
-        wrapper.className = `msg-wrapper ${isMe ? 'me' : ''}`;
-        
-        wrapper.innerHTML = `
-            <div class="profile-circle"><img src="${displayProfile}"></div>
-            <div class="msg-content-wrapper">
-                <div class="msg-sender">${displayName}</div>
-                <div class="msg-bubble">
-                    ${data.type === 'image' ? `<img src="${data.url}" class="chat-img" onclick="window.open(this.src)">` : displayMsg}
-                </div>
-            </div>`;
-        chatBox.appendChild(wrapper);
+        const chatBox = document.getElementById('chatBox');
+        if (data.type === 'system') {
+            const div = document.createElement('div');
+            div.className = 'system-msg';
+            div.innerText = data.text || "알림";
+            chatBox.appendChild(div);
+        } else {
+            const isMe = data.sender === myNick;
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${isMe ? 'me' : ''}`;
+            
+            const displayName = data.realName || data.sender || "유령친구";
+            const displayMsg = data.text || "내용이 없어요";
+            const displayProfile = data.profile || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+            wrapper.innerHTML = `
+                <div class="profile-circle"><img src="${displayProfile}"></div>
+                <div class="msg-content-wrapper">
+                    <div class="msg-sender">${displayName}</div>
+                    <div class="msg-bubble">${data.type === 'image' ? `<img src="${data.url}" class="chat-img" onclick="window.open(this.src)">` : displayMsg}</div>
+                </div>`;
+            chatBox.appendChild(wrapper);
+        }
+        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+    });
+
+    // 2. 실시간 접속자 체크
+    const myPresence = presenceRef.push(myNick);
+    myPresence.onDisconnect().remove();
+    presenceRef.on('value', snap => {
+        document.getElementById('userCount').innerText = `현재 ${snap.numChildren()}명 접속 중 🔥 (프로필 수정 클릭)`;
+    });
+
+    // 3. 입퇴장 알림 (수정된 onDisconnect 문법)
+    chatRef.push({ type: 'system', text: `✨ ${myRealName}(${myNick})님이 입장하셨습니다.` });
+    const leaveRef = chatRef.push();
+    leaveRef.onDisconnect().set({ type: 'system', text: `👋 ${myRealName}님이 학교를 떠났습니다.` });
+
+    // 4. 메시지 및 이미지 전송
+    function sendMsg() {
+        const input = document.getElementById('msgInput');
+        if(!input.value.trim()) return;
+        chatRef.push({ type: 'text', text: input.value, sender: myNick, realName: myRealName, profile: myProfileUrl });
+        input.value = '';
     }
-    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
-});
 
-// --- [핵심 수정: onDisconnect 에러 해결] ---
-// 1. 입장 알림
-chatRef.push({ 
-    type: 'system', 
-    text: `✨ ${myRealName}(${myNick})님이 입장하셨습니다.` 
-});
+    async function uploadImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const ref = storage.ref(`images/${roomId}/${Date.now()}_${file.name}`);
+        const snap = await ref.put(file);
+        const url = await snap.ref.getDownloadURL();
+        chatRef.push({ type: 'image', url: url, sender: myNick, realName: myRealName, profile: myProfileUrl });
+    }
 
-// 2. 퇴장 알림 (예약 방식 변경 ✅)
-const leaveRef = chatRef.push(); 
-leaveRef.onDisconnect().set({ 
-    type: 'system', 
-    text: `👋 ${myRealName}님이 학교를 떠났습니다.` 
-});
-    // --- 프로필 수정 관련 ---
+    // 5. 프로필 수정 기능
     function openEditModal() {
         document.getElementById('editPreview').src = myProfileUrl;
         document.getElementById('editRealName').value = myRealName;
@@ -176,80 +191,24 @@ leaveRef.onDisconnect().set({
     async function saveProfile() {
         const newName = document.getElementById('editRealName').value.trim();
         const newFile = document.getElementById('editFile').files[0];
-        if(!newName) return alert("이름을 입력해주세요!");
-
+        if(!newName) return;
         const saveBtn = document.getElementById('saveBtn');
-        saveBtn.innerText = "업로드 중...";
-        saveBtn.disabled = true;
-
+        saveBtn.innerText = "저장 중...";
         const oldName = myRealName;
         myRealName = newName;
         sessionStorage.setItem('realName', newName);
-
         if(newFile) {
             const ref = storage.ref(`profiles/${Date.now()}_${newFile.name}`);
             await ref.put(newFile);
             myProfileUrl = await ref.getDownloadURL();
             sessionStorage.setItem('profileUrl', myProfileUrl);
         }
-
-        if(oldName !== newName) {
-            chatRef.push({ type: 'system', text: `📢 ${oldName}님이 ${newName}으로 이름을 변경했습니다.` });
-        }
+        if(oldName !== newName) chatRef.push({ type: 'system', text: `📢 ${oldName}님이 ${newName}으로 이름을 변경했습니다.` });
         saveBtn.innerText = "저장";
-        saveBtn.disabled = false;
         closeEditModal();
     }
 
-    // --- 메시지 전송 및 수신 ---
-    function sendMsg() {
-        const input = document.getElementById('msgInput');
-        if(!input.value.trim()) return;
-        chatRef.push({ 
-            type: 'text', 
-            text: input.value, 
-            sender: myNick, 
-            realName: myRealName, 
-            profile: myProfileUrl 
-        });
-        input.value = '';
-    }
-
-    async function uploadImage(input) {
-        if (!input.files || !input.files[0]) return;
-        const file = input.files[0];
-        const ref = storage.ref(`images/${roomId}/${Date.now()}_${file.name}`);
-        const snap = await ref.put(file);
-        const url = await snap.ref.getDownloadURL();
-        chatRef.push({ type: 'image', url: url, sender: myNick, realName: myRealName, profile: myProfileUrl });
-    }
-
-    chatRef.on('child_added', (snapshot) => {
-        const data = snapshot.val();
-        const chatBox = document.getElementById('chatBox');
-        if (data.type === 'system') {
-            const div = document.createElement('div');
-            div.className = 'system-msg';
-            div.innerText = data.text;
-            chatBox.appendChild(div);
-        } else {
-            const isMe = data.sender === myNick;
-            const wrapper = document.createElement('div');
-            wrapper.className = `msg-wrapper ${isMe ? 'me' : ''}`;
-            wrapper.innerHTML = `
-                <div class="profile-circle"><img src="${data.profile || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}"></div>
-                <div class="msg-content-wrapper">
-                    <div class="msg-sender">${data.realName}</div>
-                    <div class="msg-bubble">${data.type === 'image' ? `<img src="${data.url}" class="chat-img" onclick="window.open(this.src)">` : data.text}</div>
-                </div>`;
-            chatBox.appendChild(wrapper);
-        }
-        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
-    });
-
     document.getElementById('msgInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMsg(); });
-
-    // 모바일 키보드 대응 레이아웃 조절
     function resizer() {
         const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         document.getElementById('app').style.height = vh + "px";
@@ -257,6 +216,5 @@ leaveRef.onDisconnect().set({
     window.visualViewport?.addEventListener('resize', resizer);
     window.addEventListener('load', resizer);
 </script>
-
 </body>
 </html>
