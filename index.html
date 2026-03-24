@@ -3,135 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>동창회 - 본인 인증 및 입장</title>
+    <title>학연지연 - 우리 학교 친구들 다 모임</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 340px; text-align: center; }
-        h1 { color: #4a90e2; font-size: 24px; margin-bottom: 10px; }
-        p { color: #666; font-size: 14px; margin-bottom: 20px; }
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: #4a90e2; }
-        button { width: 100%; padding: 14px; background-color: #4a90e2; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 5px; }
-        button:active { background-color: #357abd; }
-        .hidden { display: none; }
-        #recaptcha-container { margin-top: 10px; }
-        .status-msg { font-size: 12px; color: #e74c3c; margin-top: 10px; min-height: 18px; }
+        /* MZ 스타일 포인트: 깔끔한 폰트와 볼드한 버튼 */
+        :root {
+            --primary-black: #1a1a1a;
+            --accent-blue: #4a90e2;
+            --bg-gray: #f2f2f7;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; 
+            background-color: var(--bg-gray); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100dvh; 
+            margin: 0; 
+        }
+
+        .container { 
+            background: white; 
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+            width: 100%;
+            max-width: 340px; 
+            text-align: center; 
+        }
+
+        h1 { 
+            font-size: 28px; 
+            font-weight: 800; 
+            color: var(--primary-black); 
+            margin: 0 0 10px 0; 
+            letter-spacing: -1px;
+        }
+
+        p { 
+            font-size: 14px; 
+            color: #666; 
+            margin-bottom: 30px; 
+            line-height: 1.5;
+        }
+
+        .input-group { margin-bottom: 12px; text-align: left; }
+        
+        input { 
+            width: 100%; 
+            padding: 16px; 
+            border: 1px solid #e5e5e5; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            transition: border-color 0.2s;
+            outline: none;
+            background: #fafafa;
+        }
+
+        input:focus { border-color: var(--accent-blue); background: white; }
+
+        button { 
+            width: 100%; 
+            padding: 18px; 
+            background-color: var(--primary-black); 
+            color: white; 
+            border: none; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            font-size: 17px; 
+            font-weight: bold; 
+            margin-top: 20px;
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.98); background-color: #333; }
+
+        .footer { font-size: 12px; color: #aaa; margin-top: 25px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>🏫 우리들의 동창회</h1>
-    
-    <div id="step1">
-        <p>안전한 커뮤니티를 위해<br><b>휴대폰 인증</b>이 필요합니다. ✨</p>
-        <input type="tel" id="phoneNumber" placeholder="휴대폰 번호 (01012345678)">
-        <div id="recaptcha-container"></div>
-        <button id="sendBtn" onclick="handleSendCode()">인증문자 받기 📩</button>
-    </div>
-
-    <div id="step2" class="hidden">
-        <p>문자로 받은 <b>6자리 번호</b>를<br>입력해주세요. 💬</p>
-        <input type="number" id="verificationCode" placeholder="인증번호 6자리">
-        <button onclick="handleVerifyCode()">인증 완료 ✅</button>
-    </div>
-
-    <div id="step3" class="hidden">
-        <p>인증 성공! 🎉<br>동창을 찾기 위한 정보를 입력하세요.</p>
+    <div class="container">
+        <h1>🤝 학연지연</h1>
+        <p>인증 따윈 필요 없음!<br>우리 학교 친구들을 지금 바로 찾으세요.</p>
+        
         <form id="entryForm">
-            <input type="text" id="schoolName" placeholder="출신 학교 (예: 한국고)" required>
-            <input type="number" id="entryYear" placeholder="입학 년도 (예: 2010)" required>
-            <input type="text" id="nickname" placeholder="사용할 닉네임" required>
-            <button type="submit">동창방 입장하기 🏃‍♂️</button>
+            <div class="input-group">
+                <input type="text" id="schoolName" placeholder="출신 학교 (예: 한국고)" required>
+            </div>
+            <div class="input-group">
+                <input type="number" id="entryYear" placeholder="입학 년도 (예: 2010)" required>
+            </div>
+            <div class="input-group">
+                <input type="text" id="nickname" placeholder="사용할 닉네임" required>
+            </div>
+            <button type="submit">동창방 입장 💨</button>
         </form>
+
+        <div class="footer">
+            © 2026 학연지연. All rights reserved.
+        </div>
     </div>
 
-    <div id="statusMsg" class="status-msg"></div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-
-<script>
-    // 1. Firebase 설정 (마마님 프로젝트 정보 적용)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAXkZ-65CkAe-3usVaJa2EfhzejLJodCvQ",
-        authDomain: "test-1966e.firebaseapp.com",
-        databaseURL: "https://test-1966e-default-rtdb.firebaseio.com",
-        projectId: "test-1966e",
-        storageBucket: "test-1966e.firebasestorage.app",
-        messagingSenderId: "1067794324006",
-        appId: "1:1067794324006:web:a98367fccd9db10623a4e7"
-    };
-
-    // Firebase 초기화
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    // 2. reCAPTCHA 설정 (보이지 않는 방식)
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-        'size': 'invisible'
-    });
-
-    let confirmationResult;
-
-    // 3. 인증문자 발송 함수
-    async function handleSendCode() {
-        const num = document.getElementById('phoneNumber').value.trim();
-        const status = document.getElementById('statusMsg');
-        
-        if(!num || num.length < 10) {
-            status.innerText = "올바른 번호를 입력해주세요. 📱";
-            return;
-        }
-
-        // 한국 국가번호(+82) 적용 (01012345678 -> +821012345678)
-        const formatNum = "+82" + num.replace(/^0/, "");
-        
-        try {
-            status.style.color = "#3498db";
-            status.innerText = "문자 발송 시도 중... ⏳";
+    <script>
+        document.getElementById('entryForm').onsubmit = function(e) {
+            e.preventDefault();
+            const school = document.getElementById('schoolName').value;
+            const year = document.getElementById('entryYear').value;
+            const nick = document.getElementById('nickname').value;
             
-            confirmationResult = await auth.signInWithPhoneNumber(formatNum, window.recaptchaVerifier);
-            
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
-            status.innerText = "";
-            alert("문자가 발송되었습니다! 📩");
-        } catch (err) {
-            console.error(err);
-            status.style.color = "#e74c3c";
-            status.innerText = "발송 실패: " + err.message;
-        }
-    }
-
-    // 4. 인증번호 확인 함수
-    async function handleVerifyCode() {
-        const code = document.getElementById('verificationCode').value;
-        const status = document.getElementById('statusMsg');
-
-        try {
-            await confirmationResult.confirm(code);
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step3').classList.remove('hidden');
-            status.innerText = "";
-            alert("본인 인증 성공! 🎉");
-        } catch (err) {
-            status.innerText = "인증번호가 틀렸습니다. 다시 확인해주세요. ❌";
-        }
-    }
-
-    // 5. 최종 입장 (정보 전달)
-    document.getElementById('entryForm').onsubmit = function(e) {
-        e.preventDefault();
-        const school = document.getElementById('schoolName').value;
-        const year = document.getElementById('entryYear').value;
-        const nick = document.getElementById('nickname').value;
-        
-        // chat.html로 정보 전달
-        location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}&auth=true`;
-    };
-</script>
-
+            // 닉네임까지 포함해서 채팅 페이지로 이동
+            location.href = `chat.html?school=${encodeURIComponent(school)}&year=${year}&nick=${encodeURIComponent(nick)}`;
+        };
+    </script>
 </body>
 </html>
