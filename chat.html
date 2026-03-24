@@ -128,11 +128,11 @@
     });
 
     // 퇴장 알림 (수정된 로직 ✅)
-    const leaveRef = chatRef.push();
-    leaveRef.onDisconnect().set({ 
-        type: 'system', 
-        text: `👋 ${myRealName}님이 학교를 떠났습니다.` 
-    });
+const leaveRef = chatRef.push(); 
+leaveRef.onDisconnect().set({ 
+    type: 'system', 
+    text: `👋 ${myRealName}님이 학교를 떠났습니다.` 
+});
 
     // --- 프로필 수정 관련 ---
     function openEditModal() {
