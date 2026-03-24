@@ -111,29 +111,54 @@
 
     const chatRef = database.ref('rooms/' + roomId);
     const presenceRef = database.ref('rooms/' + roomId + '/presence');
+// --- [핵심 수정: 데이터 수신 및 undefined 방어] ---
+chatRef.on('child_added', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
 
-    // --- 접속자 관리 및 입퇴장 알림 ---
-    const myPresence = presenceRef.push(myNick);
-    myPresence.onDisconnect().remove();
+    const chatBox = document.getElementById('chatBox');
+    
+    // ✨ 모든 값이 없을 경우를 대비해 '기본값'을 강제로 지정합니다.
+    const displayName = data.realName || data.sender || "알 수 없는 친구";
+    const displayMsg = data.text || "내용이 없는 메시지입니다.";
+    const displayProfile = data.profile || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    presenceRef.on('value', snap => {
-        const count = snap.numChildren();
-        document.getElementById('userCount').innerText = `현재 ${count}명 접속 중 🔥 (프로필 수정 클릭)`;
-    });
+    if (data.type === 'system') {
+        const div = document.createElement('div');
+        div.className = 'system-msg';
+        div.innerText = data.text || "알림";
+        chatBox.appendChild(div);
+    } else {
+        const isMe = data.sender === myNick;
+        const wrapper = document.createElement('div');
+        wrapper.className = `msg-wrapper ${isMe ? 'me' : ''}`;
+        
+        wrapper.innerHTML = `
+            <div class="profile-circle"><img src="${displayProfile}"></div>
+            <div class="msg-content-wrapper">
+                <div class="msg-sender">${displayName}</div>
+                <div class="msg-bubble">
+                    ${data.type === 'image' ? `<img src="${data.url}" class="chat-img" onclick="window.open(this.src)">` : displayMsg}
+                </div>
+            </div>`;
+        chatBox.appendChild(wrapper);
+    }
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+});
 
-    // 입장 알림
-    chatRef.push({ 
-        type: 'system', 
-        text: `✨ ${myRealName}(${myNick})님이 입장하셨습니다.` 
-    });
+// --- [핵심 수정: onDisconnect 에러 해결] ---
+// 1. 입장 알림
+chatRef.push({ 
+    type: 'system', 
+    text: `✨ ${myRealName}(${myNick})님이 입장하셨습니다.` 
+});
 
-    // 퇴장 알림 (수정된 로직 ✅)
+// 2. 퇴장 알림 (예약 방식 변경 ✅)
 const leaveRef = chatRef.push(); 
 leaveRef.onDisconnect().set({ 
     type: 'system', 
     text: `👋 ${myRealName}님이 학교를 떠났습니다.` 
 });
-
     // --- 프로필 수정 관련 ---
     function openEditModal() {
         document.getElementById('editPreview').src = myProfileUrl;
